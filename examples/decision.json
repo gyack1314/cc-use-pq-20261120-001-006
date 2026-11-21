@@ -1,0 +1,28 @@
+{
+  "decision_id": "july-heat-reserve",
+  "decision_at": "2026-06-26T10:00",
+  "forecast": "fc-heat-v1",
+  "query": {
+    "metric": "heat",
+    "zones": ["river", "hill"],
+    "start": "2026-07-03",
+    "end": "2026-07-04",
+    "minimum_coverage": "0.8"
+  },
+  "budget_cents": 30000,
+  "severe_scenarios": ["S1-river-hot", "S2-hill-hot"],
+  "guarantees": [
+    {"zone": "river", "group": "senior", "minimum_ratio": "0.8"},
+    {"zone": "hill", "group": "senior", "minimum_ratio": "0.8"}
+  ],
+  "proposals": [
+    {"action": "shared-river", "reserve_fee_cents": 3000, "activation_fee_cents": 5000,
+     "cancel_deadline": "2026-07-01T18:00", "late_cancel_fee_cents": 3000},
+    {"action": "shared-river-alt", "reserve_fee_cents": 3000, "activation_fee_cents": 5000,
+     "cancel_deadline": "2026-07-01T18:00", "late_cancel_fee_cents": 3000},
+    {"action": "cool-hill", "reserve_fee_cents": 3000, "activation_fee_cents": 5000,
+     "cancel_deadline": "2026-07-01T18:00", "late_cancel_fee_cents": 3000},
+    {"action": "cool-hill-alt", "reserve_fee_cents": 2500, "activation_fee_cents": 4000,
+     "cancel_deadline": "2026-07-01T18:00", "late_cancel_fee_cents": 2500}
+  ]
+}

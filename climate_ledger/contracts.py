@@ -78,6 +78,16 @@ def day(value, field="day"):
     return value
 
 
+def moment(value, field="published_at"):
+    """本地业务时刻：YYYY-MM-DDTHH:MM，不做时区换算，仅字典序比较。"""
+    require(isinstance(value, str) and "T" in value, "moment", f"{field}需要YYYY-MM-DDTHH:MM本地时刻")
+    head, tail = value.split("T", 1)
+    day(head, field)
+    require(len(tail) == 5 and tail[2] == ":" and tail[:2].isdigit() and tail[3:].isdigit()
+            and "00" <= tail[:2] <= "23" and "00" <= tail[3:] <= "59", "moment", f"{field}时刻格式无效")
+    return value
+
+
 def period(start, end, *, limit=3660):
     start, end = day(start, "start"), day(end, "end")
     span = (date.fromisoformat(end) - date.fromisoformat(start)).days
@@ -127,7 +137,7 @@ def row_key(kind, record):
     return record["id"]
 
 
-KINDS = ("zone", "metric", "station", "population", "action", "reading")
+KINDS = ("zone", "metric", "station", "population", "action", "reading", "forecast")
 
 
 def query_spec(value):

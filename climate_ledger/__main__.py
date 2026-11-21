@@ -64,6 +64,30 @@ def parser():
     csv_export = commands.add_parser("export-csv", help="导出当前资料快照")
     csv_export.add_argument("directory")
     csv_export.add_argument("--seq", type=int)
+    preview = commands.add_parser("decision-preview", help="按当时预报预览适应组合（不占名额）")
+    preview.add_argument("input")
+    confirm = commands.add_parser("decision-confirm", help="确认组合并占用预算与设施名额")
+    confirm.add_argument("input")
+    confirm.add_argument("--select", required=True, help="逗号分隔的候选行动编号")
+    cancel = commands.add_parser("decision-cancel", help="取消预留并按截止时刻结算退费")
+    cancel.add_argument("decision")
+    cancel.add_argument("--actions", required=True)
+    cancel.add_argument("--at", required=True)
+    activate = commands.add_parser("decision-activate", help="启用已预留行动并结算启用费")
+    activate.add_argument("decision")
+    activate.add_argument("--actions", required=True)
+    activate.add_argument("--at", required=True)
+    adjust = commands.add_parser("decision-adjust", help="显式确认调整：取消旧预留后确认新组合")
+    adjust.add_argument("decision")
+    adjust.add_argument("input")
+    adjust.add_argument("--select", required=True)
+    adjust.add_argument("--at", required=True)
+    show = commands.add_parser("decision-show", help="查看决定事件链与费用台账")
+    show.add_argument("decision")
+    commands.add_parser("decision-list", help="列出全部决定")
+    verify_decision = commands.add_parser("decision-verify", help="以有效观测事后核验并归因")
+    verify_decision.add_argument("decision")
+    verify_decision.add_argument("--minimum-coverage")
     return root
 
 
@@ -96,6 +120,25 @@ def dispatch(app, args):
         return app.ingest_csv(args.id, args.source, {args.kind: args.input})
     if args.command == "export-csv":
         return app.export_csv(args.directory, seq=args.seq)
+    if args.command == "decision-preview":
+        return app.preview_decision(load(args.input))
+    if args.command == "decision-confirm":
+        return app.confirm_decision(load(args.input), [item.strip() for item in args.select.split(",") if item.strip()])
+    if args.command == "decision-cancel":
+        return app.cancel_reservation(args.decision,
+                                      [item.strip() for item in args.actions.split(",") if item.strip()], args.at)
+    if args.command == "decision-activate":
+        return app.activate_reservation(args.decision,
+                                        [item.strip() for item in args.actions.split(",") if item.strip()], args.at)
+    if args.command == "decision-adjust":
+        return app.adjust_decision(args.decision, load(args.input),
+                                   [item.strip() for item in args.select.split(",") if item.strip()], args.at)
+    if args.command == "decision-show":
+        return app.show_decision(args.decision)
+    if args.command == "decision-list":
+        return app.list_decisions()
+    if args.command == "decision-verify":
+        return app.verify_decision(args.decision, minimum_coverage=args.minimum_coverage)
     raise DomainError("command", "操作不支持")
 
 

@@ -161,8 +161,12 @@ class ObservationTests(unittest.TestCase):
         self.assertEqual(self.app.ledger.snapshot()["station"]["river-s"]["start"], "2026-01-01")
 
     def test_csv_roundtrip_preserves_arrays_unicode_and_null(self):
-        for kind in ["zone", "metric", "station", "population", "action", "reading"]:
+        self.app.ingest(example("forecast.json"))
+        for kind in ["zone", "metric", "station", "population", "action", "reading", "forecast"]:
             rows = [item["data"] for item in self.bundle["records"] if item["kind"] == kind]
+            if kind == "forecast":
+                rows = [item["data"] for item in example("forecast.json")["records"]
+                        if item["kind"] == "forecast"]
             rendered = encode_csv(rows, kind)
             decoded = decode_csv("\ufeff" + rendered, kind)
             self.assertEqual(len(decoded), len(rows))
@@ -188,3 +192,14 @@ class ObservationTests(unittest.TestCase):
             restored.ingest_csv("csv-restored", "本地合成城市资料", files)
             self.assertEqual(restored.analyze(self.query)["total"], self.app.analyze(self.query)["total"])
             self.assertEqual(restored.compare(example("study.json"))["estimate"], "-2.500000")
+
+    def test_forecast_survives_csv_snapshot_restore(self):
+        self.app.ingest(example("forecast.json"))
+        directory = Path(self.temp.name) / "csv-forecast"
+        files = {item["kind"]: item["path"] for item in self.app.export_csv(directory)["files"]}
+        with Application(Path(self.temp.name) / "restored-forecast.sqlite3") as restored:
+            restored.ingest_csv("csv-forecast-restored", "本地合成城市资料", files)
+            self.assertIn("fc-heat-v1", restored.ledger.snapshot()["forecast"])
+            preview = restored.preview_decision(example("decision.json"))
+            self.assertEqual(preview["forecast"], "fc-heat-v1")
+            self.assertGreater(preview["feasible_portfolios"], 0)

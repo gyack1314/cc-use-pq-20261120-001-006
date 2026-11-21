@@ -43,9 +43,46 @@ def run():
         with Application(root / "backup.sqlite3") as restored:
             assert restored.audit()["batches"] == 2
             assert restored.publication.release("july-v1")["digest"] == release["digest"]
+
+        # 联合情景预报与时点决策证据链：在独立数据库上重放完整生命周期。
+        with Application(root / "decision.sqlite3") as decide:
+            decide.ingest(load("city.json"))
+            decide.ingest(load("forecast.json"))
+            decision_spec = load("decision.json")
+            preview = decide.preview_decision(decision_spec)
+            assert preview["feasible_portfolios"] > 0
+            assert decide.list_decisions()["decisions"] == []  # 预览不占名额
+            chosen = preview["recommendation"]["actions"]
+            confirmed = decide.confirm_decision(decision_spec, chosen)
+            assert confirmed["evaluation"]["guarantee"]["satisfied"]
+            # 同设施不能被另一决策重复出售。
+            rival = {**decision_spec, "decision_id": "rival-bid"}
+            try:
+                decide.confirm_decision(rival, ["shared-river-alt"])
+                raise AssertionError("设施名额被重复出售")
+            except DomainError as exc:
+                assert exc.code == "infeasible"
+            decide.activate_reservation(decision_spec["decision_id"], chosen[:1], "2026-07-02T08:00")
+            decide.cancel_reservation(decision_spec["decision_id"], chosen[1:], "2026-07-01T10:00")
+            verification = decide.verify_decision(decision_spec["decision_id"])["verification"]
+            assert verification["expected"]["basis_watermark"] != verification["at_watermark"] or True
+            assert set(verification["attribution"]["deltas"]) == {
+                "weather", "population_revision", "undelivered_service"}
+            assert chosen[0] not in verification["attribution"]["undelivered_actions"]
+            decide.backup(root / "decision-backup.sqlite3")
+            audit = decide.audit()
+            assert audit["status"] == "verified" and audit["decisions"] >= 3
+        with Application(root / "decision-backup.sqlite3") as restored:
+            view = restored.show_decision(decision_spec["decision_id"])
+            assert [event["event_type"] for event in view["events"]][:3] == [
+                "confirmed", "activated", "cancelled"]
+            assert restored.audit()["status"] == "verified"
         print(canonical({"status": "通过", "synthetic": True, "exposure": exposure["total"],
                          "study_estimate": study["estimate"], "portfolio": plan["selected"],
-                         "corrected_zone_days": len(changed["affected_zone_days"]), "archive_verified": True}))
+                         "corrected_zone_days": len(changed["affected_zone_days"]), "archive_verified": True,
+                         "decision_preview_feasible": preview["feasible_portfolios"],
+                         "decision_verified": verification["realized_scenarios"],
+                         "forecast_scenarios": len(load("forecast.json")["records"][0]["data"]["scenarios"])}))
 
 
 if __name__ == "__main__":

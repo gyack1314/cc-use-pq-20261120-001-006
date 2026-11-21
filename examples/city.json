@@ -399,6 +399,66 @@
         "priority": 5,
         "facility": "river-park"
       }
+    },
+    {
+      "kind": "action",
+      "data": {
+        "id": "cool-hill",
+        "revision": 1,
+        "name": "合成降温行动-cool-hill",
+        "zone": "hill",
+        "metric": "heat",
+        "start": "2026-07-03",
+        "end": "2026-07-04",
+        "status": "planned",
+        "capacity": 90,
+        "groups": [
+          "senior",
+          "adult"
+        ],
+        "priority": 5,
+        "facility": "shared-plaza"
+      }
+    },
+    {
+      "kind": "action",
+      "data": {
+        "id": "cool-hill-alt",
+        "revision": 1,
+        "name": "合成降温行动-cool-hill-alt",
+        "zone": "hill",
+        "metric": "heat",
+        "start": "2026-07-03",
+        "end": "2026-07-04",
+        "status": "planned",
+        "capacity": 90,
+        "groups": [
+          "senior",
+          "adult"
+        ],
+        "priority": 4,
+        "facility": "hill-gym"
+      }
+    },
+    {
+      "kind": "action",
+      "data": {
+        "id": "shared-river-alt",
+        "revision": 1,
+        "name": "合成降温行动-shared-river-alt",
+        "zone": "river",
+        "metric": "heat",
+        "start": "2026-07-03",
+        "end": "2026-07-04",
+        "status": "planned",
+        "capacity": 90,
+        "groups": [
+          "senior",
+          "adult"
+        ],
+        "priority": 4,
+        "facility": "shared-plaza"
+      }
     }
   ]
 }

@@ -26,6 +26,11 @@ CREATE TABLE IF NOT EXISTS releases(
  id TEXT PRIMARY KEY, draft_id TEXT NOT NULL UNIQUE REFERENCES drafts(id),
  payload TEXT NOT NULL, digest TEXT NOT NULL, supersedes TEXT REFERENCES releases(id));
 CREATE TABLE IF NOT EXISTS release_heads(scope TEXT PRIMARY KEY, release_id TEXT NOT NULL REFERENCES releases(id));
+CREATE TABLE IF NOT EXISTS decision_events(
+ seq INTEGER PRIMARY KEY AUTOINCREMENT, decision_id TEXT NOT NULL,
+ event_type TEXT NOT NULL, ledger_seq INTEGER NOT NULL,
+ payload TEXT NOT NULL, digest TEXT NOT NULL, prev_digest TEXT);
+CREATE INDEX IF NOT EXISTS decision_events_chain ON decision_events(decision_id, seq);
 """
 
 

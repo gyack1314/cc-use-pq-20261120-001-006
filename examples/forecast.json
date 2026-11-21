@@ -1,0 +1,44 @@
+{
+  "id": "heat-outlook-v1",
+  "source": "本地合成气象来源",
+  "records": [
+    {
+      "kind": "forecast",
+      "data": {
+        "id": "fc-heat-v1",
+        "revision": 1,
+        "source": "本地合成气象来源",
+        "published_at": "2026-06-25T09:00",
+        "metric": "heat",
+        "start": "2026-07-03",
+        "end": "2026-07-04",
+        "zones": [
+          "river",
+          "hill"
+        ],
+        "scenarios": [
+          {
+            "id": "S1-river-hot",
+            "probability": "0.6",
+            "readings": [
+              {"zone": "river", "day": "2026-07-03", "value": "35"},
+              {"zone": "river", "day": "2026-07-04", "value": "35"},
+              {"zone": "hill", "day": "2026-07-03", "value": "28"},
+              {"zone": "hill", "day": "2026-07-04", "value": "28"}
+            ]
+          },
+          {
+            "id": "S2-hill-hot",
+            "probability": "0.4",
+            "readings": [
+              {"zone": "river", "day": "2026-07-03", "value": "28"},
+              {"zone": "river", "day": "2026-07-04", "value": "28"},
+              {"zone": "hill", "day": "2026-07-03", "value": "35"},
+              {"zone": "hill", "day": "2026-07-04", "value": "35"}
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -14,9 +14,10 @@ CSV_FIELDS = {
     "reading": ("station", "metric", "day", "revision", "value", "unit", "quality"),
     "population": ("id", "revision", "zone", "group", "start", "end", "count", "vulnerability"),
     "action": ("id", "revision", "name", "zone", "metric", "start", "end", "status", "capacity", "groups", "priority", "facility"),
+    "forecast": ("id", "revision", "source", "published_at", "metric", "start", "end", "zones", "scenarios"),
 }
 INTEGER_FIELDS = {"revision", "count", "capacity", "priority"}
-ARRAY_FIELDS = {"metrics", "groups"}
+ARRAY_FIELDS = {"metrics", "groups", "zones", "scenarios"}
 
 
 def decode_csv(content, kind):
@@ -91,6 +92,9 @@ def bundle_from_csv(batch_id, source, files):
             content = Path(path).read_text(encoding="utf-8-sig")
         except (OSError, UnicodeError) as exc:
             raise DomainError("input", "CSV文件不可读", path=str(path)) from exc
+        # 快照可能为没有记录的类型导出仅含表头的文件，恢复时跳过而非当作错误。
+        if len(content.strip().splitlines()) <= 1:
+            continue
         records.extend(decode_csv(content, kind))
     return {"id": batch_id, "source": source, "records": records}
 

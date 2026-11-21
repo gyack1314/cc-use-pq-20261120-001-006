@@ -2,21 +2,26 @@ from .adaptation import Adaptation, normalize_action
 from .analysis.exposure import Exposure
 from .analysis.study import Study
 from .contracts import KINDS, identifier, integer, require, shape, text
+from .decisions import DecisionService, DecisionStore
+from .forecast import Forecasts, normalize_forecast
 from .ledger import Ledger
 from .observatory.catalog import Catalog, normalize_metric, normalize_station, normalize_zone
 from .observatory.readings import Readings, normalize_reading
 from .publication import Publication
 from .residents import Residents, normalize_population
+from .verification import Verification
 
 
 NORMALIZERS = {"zone": normalize_zone, "metric": normalize_metric, "station": normalize_station,
-               "population": normalize_population, "action": normalize_action, "reading": normalize_reading}
+               "population": normalize_population, "action": normalize_action,
+               "reading": normalize_reading, "forecast": normalize_forecast}
 
 
 class Application:
     def __init__(self, path):
         self.ledger = Ledger(path)
         self.publication = Publication(self.ledger)
+        self.decisions = DecisionService(self.ledger)
 
     def __enter__(self):
         return self
@@ -30,6 +35,7 @@ class Application:
         Readings(snapshot).validate()
         Residents(snapshot).validate()
         Adaptation(snapshot).validate()
+        Forecasts(snapshot).validate()
 
     def ingest(self, bundle):
         shape(bundle, ("id", "source", "records"))
@@ -139,3 +145,29 @@ class Application:
         with self.ledger.transaction():
             watermark = self.ledger.watermark() if seq is None else integer(seq, "seq")
             return {"watermark": watermark, **Exposure(self.ledger.snapshot(watermark)).priorities(spec)}
+
+    def preview_decision(self, spec):
+        return self.decisions.preview(spec)
+
+    def confirm_decision(self, spec, selected):
+        return self.decisions.confirm(spec, selected)
+
+    def cancel_reservation(self, decision_id, actions, at):
+        return self.decisions.cancel(decision_id, actions, at)
+
+    def activate_reservation(self, decision_id, actions, at):
+        return self.decisions.activate(decision_id, actions, at)
+
+    def adjust_decision(self, decision_id, new_spec, selected, at):
+        return self.decisions.adjust(decision_id, new_spec, selected, at)
+
+    def show_decision(self, decision_id):
+        return self.decisions.decision(decision_id)
+
+    def verify_decision(self, decision_id, *, minimum_coverage=None):
+        return Verification(self.ledger, DecisionStore(self.ledger)).run(
+            decision_id, minimum_coverage=minimum_coverage)
+
+    def list_decisions(self):
+        with self.ledger.transaction():
+            return {"decisions": DecisionStore(self.ledger).list_decisions()}

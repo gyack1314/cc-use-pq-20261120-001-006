@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 from .contracts import KINDS, canonical, fingerprint, require
+from .decisions import DecisionStore
 from .publication import Publication
 
 
@@ -60,8 +61,27 @@ class Audit:
             heads[scope] = row["id"]
         actual_heads = dict(self.ledger.connection.execute("SELECT scope,release_id FROM release_heads"))
         require(heads == actual_heads, "audit", "专题当前发布指针损坏")
+        decisions = self.verify_decisions()
         return {"status": "verified", "batches": checked, "objects": len(facts),
-                "versions": versions, "releases": len(releases), "watermark": previous_seq}
+                "versions": versions, "releases": len(releases), "decisions": decisions,
+                "watermark": previous_seq}
+
+    def verify_decisions(self):
+        store = DecisionStore(self.ledger)
+        count = 0
+        for decision_id in store.list_decisions():
+            events = store.events(decision_id)
+            confirmed = [event for event in events if event["event_type"] == "confirmed"]
+            require(confirmed, "audit", "决策缺少确认事件", decision=decision_id)
+            for event in confirmed:
+                require(event["ledger_seq"] <= self.ledger.watermark(), "audit",
+                        "决策引用了不存在的资料水位")
+                spec = event["payload"]["spec"]
+                require(spec["decision_id"] == decision_id, "audit", "决策事件编号不一致")
+            # 事件流必须能无矛盾地折叠（预算、预留、启用约束在状态机内校验）。
+            store.replay(events)
+            count += len(events)
+        return count
 
     def backup(self, destination):
         require(not self.ledger.connection.in_transaction, "transaction", "备份不能嵌套业务事务")
